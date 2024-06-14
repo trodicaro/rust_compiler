@@ -38,8 +38,10 @@ comments.   I will be working from the "dabeaz" branch.
 Real-time Chat
 --------------
 
-The course uses Zoom chat and Github discussions.  Github discussions
+The course uses Zoom chat and Github discussions.  [Github discussions](https://github.com/dabeaz-course/rust_2024_06/discussions)
 is a better option for topics involving code examples.
+
+I would also encourage you to make a brief introduction on [here](https://github.com/dabeaz-course/rust_2024_06/discussions/1).
 
 Zoom Meeting Link
 -----------------
