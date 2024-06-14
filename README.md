@@ -4,6 +4,12 @@ Cobbling an Interpreter, June 24-28, 2024
 Our goal: Implement an interpreter in Rust from the first part of
 [Crafting Interpreters](https://craftinginterpreters.com).
 
+Some back-story: I've been thinking about the possibility of offering
+a "Programming Languages" course for some time.  This course is a bit
+of an experiment into how it might work--by trying to implement a simple
+programming language using one of the most modern programming languages
+around.   There should be more than enough to talk about.
+
 Setup
 -----
 
@@ -26,7 +32,7 @@ bash $ git commit -m "Solved some problem"
 bash $ git push
 ```
 
-I strongly encourage people to look at other branches, copy code, and make
+I would encourage you to look at other branches, copy code, and make
 comments.   I will be working from the "dabeaz" branch.
 
 Real-time Chat
