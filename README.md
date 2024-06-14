@@ -43,6 +43,12 @@ The live course is conducted via Zoom.  The official course hours are
 
 Topic: Cobbling an Interpreter in Rust
 
+Join Zoom Meeting
+https://us02web.zoom.us/j/82818442054?pwd=Z2dubytDZlhTZEMraHNwMlpzOVRLZz09
+
+Meeting ID: 828 1844 2054  
+Passcode: 742919  
+
 Resources
 ---------
 
