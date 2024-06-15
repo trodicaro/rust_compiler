@@ -63,5 +63,10 @@ Resources
 * [Crafting Interpreters](https://craftinginterpreters.com)
 * [Rust Programming Language](https://www.rust-lang.org)
 
+A few tutorials recommended to me by a reputable Rust expert and former student.
+
+* [Comprehensive Rust](https://google.github.io/comprehensive-rust/)
+* [Rust by Example](https://doc.rust-lang.org/rust-by-example/)
+
 Please add links to more resources if you know of something good!
 
