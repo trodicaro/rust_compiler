@@ -70,3 +70,32 @@ A few tutorials recommended to me by a reputable Rust expert and former student.
 
 Please add links to more resources if you know of something good!
 
+Topics to Focus On
+------------------
+
+The focus of the week is on the somewhat narrow problem of
+implementing the Lox interpreter from Crafting Interpreters.  As such,
+it's definitely NOT necessary to know all of Rust.  However, the
+following topics come to mind and might serve as a guide when
+reviewing some Rust basics.
+
+* Text and string manipulation.  We'll need to write a scanner and parser.
+
+* Recursion.  Maybe of the algorithms and data structures used in
+  implementing an interpreter involve recursion.
+
+* Trees.  We'll need to represent an abstract syntax tree (AST)
+  and perform various tasks while traversing the tree.
+
+* Pattern matching.  We'll need to write a lot of code involving
+  pattern matching over AST tree nodes.
+
+* Environments. An interpreter typically involves a mutable runtime
+  environment of variables (stack frames, etc.) that gets built
+  using hash-maps or trees of some kind.
+  
+My gut sense is that everything will be a lot easier if we can focus
+on using a more "functional" programming style based on functions and
+immutable data structures.
+
+
