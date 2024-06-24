@@ -7,7 +7,7 @@ pub mod parse;
 
 // Type definitions here?
 pub type Filename = String;       // () = "Unit" (kind of like "None" in Python)
-pub type Source = ();
+pub type Source = String;
 pub type Tokens = ();
 pub type AST = ();
 
