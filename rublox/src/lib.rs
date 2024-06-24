@@ -23,12 +23,19 @@ pub type AST = ();
 
 #[derive(Debug)]
 pub enum TokenType {
+    // Symbols
     LPAREN, RPAREN, LBRACE, RBRACE,   // ( ) { }
     COMMA, DOT, MINUS, PLUS,          // , . - +
     SEMICOLON, SLASH, STAR,           // ; / *
     BANG, ASSIGN, NE, EQ,             // ! = != ==
     GT, GE, LT, LE,                   // > >= < <=
-    IDENTIFIER, STRING, NUMBER,
+    
+    // literals
+    IDENTIFIER,
+    STRING(String),
+    NUMBER(f64),
+
+    // Keywords
     AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
     PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
     EOF
