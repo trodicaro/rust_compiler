@@ -1,6 +1,13 @@
+pub mod reader;
 pub mod tokenize;
 pub mod interp;
 pub mod parse;
+
+// Type definitions here?
+pub type Filename = ();
+pub type Source = ();
+pub type Tokens = ();
+pub type AST = ();
 
 // Commentary:  I'm pretty sure I don't want to write my entire project
 // inside `main.rs` or inside `lib.rs`.   So currently trying to figure
