@@ -1,5 +1,7 @@
 // Parse Lox code
 
-pub fn parse() {
+use crate::{Tokens, AST};
+
+pub fn parse(tokens : &Tokens) -> AST {
     println!("Parsing Lox");
 }

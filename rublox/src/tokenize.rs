@@ -1,5 +1,7 @@
 // Tokenize Lox
 
-pub fn tokenize() {
+use crate::{Source, Tokens};
+
+pub fn tokenize(src: &Source) -> Tokens {
     println!("Tokenizing Lox");
 }
