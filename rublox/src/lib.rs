@@ -20,3 +20,31 @@ pub type AST = ();
 // I don't necessarily want to overengineer it.  But, I'd definitely
 // like to figure out some basic source structure now before I get too
 // far deep into actual implementation.
+
+#[derive(Debug)]
+pub enum TokenType {
+    LPAREN, RPAREN, LBRACE, RBRACE,   // ( ) { }
+    COMMA, DOT, MINUS, PLUS,          // , . - +
+    SEMICOLON, SLASH, STAR,           // ; / *
+    BANG, ASSIGN, NE, EQ,             // ! = != ==
+    GT, GE, LT, LE,                   // > >= < <=
+    IDENTIFIER, STRING, NUMBER,
+    AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
+    PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
+    EOF
+}
+
+#[derive(Debug)]
+pub struct Token {
+    toktype : TokenType,
+    lexeme  : String,
+    // Discussion: CI (Crafting Interpreters) describes an extra field
+    // here called "literal" that is set to Object (meaning any Java object).
+    // I am not aware of anything comparable to that in Rust. So, I am
+    // leaving it off completely.   A token has a type, a value, and a line.
+    // However: see https://github.com/dabeaz-course/rust_2024_06/discussions/5
+    line : i32,
+}
+
+
+
