@@ -17,6 +17,12 @@ fn main() {
     interpret(&ast);
 }
 
+use std::env;
+
+// Read the input filename from the command line arguments
 fn get_filename_from_args() -> Filename {
+    let filename = std::env::args().nth(1).expect("Missing filename");
     println!("Getting filename from command line");
+    println!("filename={filename}");
+    return filename;
 }
