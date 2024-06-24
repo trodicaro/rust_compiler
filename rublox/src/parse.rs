@@ -4,6 +4,6 @@
 
 use crate::{Tokens, AST};
 
-pub fn parse(tokens : &Tokens) -> AST {
+pub fn parse(_tokens : &Tokens) -> AST {
     println!("Parsing Lox");
 }
