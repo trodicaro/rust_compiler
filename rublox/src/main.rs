@@ -17,7 +17,7 @@ fn main() {
     interpret(&ast);
 }
 
-use std::env;
+// use std::env;
 
 // Read the input filename from the command line arguments
 fn get_filename_from_args() -> Filename {
