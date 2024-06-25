@@ -37,7 +37,17 @@ impl Scanner {
     }
     }
     fn match_any(&self) -> Option<Token> {
+    // Discussion.  Can this code be simplified in some way?  Higher-order functions?
+    if let Some(tok) = self.match_whitespace() {
+        return Some(tok);
+    }
+    if let Some(tok) = self.match_comment() {
+        return Some(tok);
+    }
     if let Some(tok) = self.match_identifier() {
+        return Some(tok);
+    }
+    if let Some(tok) = self.match_number() {
         return Some(tok);
     }
     if let Some(tok) = self.match_two_character_symbol() {
@@ -102,14 +112,72 @@ impl Scanner {
     }
     }
 
+    // not super happy with this, may revisit later
     fn match_number(&self) -> Option<Token> {
-    todo!();
+    let mut chars = self.remaining();
+    if let Some(ch) = chars.next() {
+        if ch.is_numeric() {
+        let mut have_decimal_point = false;
+        let mut lexeme = String::new();
+        lexeme.push(ch);
+        while let Some(ch) = chars.next() {
+            if ch == '.' {
+            if have_decimal_point {
+                break;
+            } else {
+                have_decimal_point = true;
+                lexeme.push('.');
+            }
+            } else if ch.is_numeric() {
+            lexeme.push(ch);
+            } else {
+            break;
+            }
+        }
+        Some(Token::new(NUMBER, &lexeme, 0))
+        } else {
+        None
+        }
+    } else {
+        None
     }
+    }
+
     fn match_comment(&self) -> Option<Token> {
-    todo!();
+    if self.peek(2) == "//" {
+        let mut lexeme = String::new();
+        for ch in self.remaining() {
+        if ch == '\n' {
+            break;
+        }
+        lexeme.push(ch);
+        }
+        Some(Token::new(COMMENT, &lexeme, 0))
+    } else {
+        None
+    }
     }
     fn match_whitespace(&self) -> Option<Token> {
-    todo!();
+    let mut chars = self.remaining();
+    if let Some(ch) = chars.next() {
+        if ch.is_whitespace()  {
+        // Iterate over remaining characters looking for valid identifier characters
+        let mut lexeme = String::new();
+        lexeme.push(ch);
+        for ch in chars {
+            if ch.is_whitespace() {
+            lexeme.push(ch);
+            } else {
+            break;
+            }
+        }
+        Some(Token::new(WHITESPACE, &lexeme, 0))
+        } else {
+        None
+        }
+    } else {
+        None
+    }
     }
 }
 
@@ -147,13 +215,23 @@ fn test_match_two_character_symbol() {
 
 #[test]
 fn test_next_token() {
-    let mut scanner = Scanner::new(String::from("<<=abc "));
+    let mut scanner = Scanner::new(String::from("<<=123 1234.56 \nabc//comment"));
     let t = scanner.next_token();
     assert_eq!(t, Some(Token::new(LT, "<", 0)));
     let t = scanner.next_token();
     assert_eq!(t, Some(Token::new(LE, "<=", 0)));
     let t = scanner.next_token();
+    assert_eq!(t, Some(Token::new(NUMBER, "123", 0)));
+    let t = scanner.next_token();
+    assert_eq!(t, Some(Token::new(WHITESPACE, " ", 0)));
+    let t = scanner.next_token();
+    assert_eq!(t, Some(Token::new(NUMBER, "1234.56", 0)));
+    let t = scanner.next_token();
+    assert_eq!(t, Some(Token::new(WHITESPACE, " \n", 0)));
+    let t = scanner.next_token();
     assert_eq!(t, Some(Token::new(IDENTIFIER, "abc", 0)));
+    let t = scanner.next_token();
+    assert_eq!(t, Some(Token::new(COMMENT, "//comment", 0)));
 }
 
 pub fn tokenize(src: &Source) -> Tokens {
