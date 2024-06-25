@@ -23,6 +23,7 @@ impl Scanner {
         &self.source[self.index..self.index+n]
     }
     }
+
     fn remaining(&self) -> Chars {
     self.source[self.index..].chars()
     }
@@ -36,6 +37,30 @@ impl Scanner {
         None
     }
     }
+    fn tokenize(&mut self) -> Tokens {
+    let mut rawtokens = Tokens::new();
+    // Phase 1: Collect all of the tokens into a list
+    while let Some(tok) = self.next_token() {
+        rawtokens.push(tok);
+    }
+    // Phase 2: Fix all of the line numbers, throw away whitespace and comments
+    let mut tokens = Tokens::new();
+    let mut line = 1;
+    for tok in rawtokens.into_iter() {
+        match tok {
+        Token { toktype: WHITESPACE, lexeme: lexeme, line:_ } => {
+            line += lexeme.matches('\n').count();
+        },
+        Token { toktype: COMMENT, lexeme: _, line: _ } => {
+        },
+        _ => {
+            tokens.push(Token::new(tok.toktype, &tok.lexeme, line as i32))
+        }
+        }
+    }
+    tokens
+    }
+
     fn match_any(&self) -> Option<Token> {
     // Discussion.  Can this code be simplified in some way?  Higher-order functions?
     if let Some(tok) = self.match_whitespace() {
@@ -236,12 +261,22 @@ fn test_next_token() {
 
 pub fn tokenize(src: &Source) -> Tokens {
     println!("Tokenizing Lox");
+    let mut scanner = Scanner::new(String::from(src));
+    let toks = scanner.tokenize();
+    println!("{toks:?}");
+    toks
+}
+
+pub fn old_tokenize(src: &Source) -> Tokens {
+    println!("Tokenizing Lox");
 
     let mut tokens: Tokens = Vec::new();
     let mut line = 1;
     //let mut chars = src.chars();
     let mut chars = src.chars().peekable();
 
+    // Not sure if I can get away with using an iterator (easily).  Have to peek ahead on the
+    // input in certain situations which is annoying (although there is a way around that).
     while let Some(ch) = chars.next() {
     println!("ch={ch:?}");
     match ch {
