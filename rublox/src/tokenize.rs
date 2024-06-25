@@ -107,27 +107,22 @@ pub fn tokenize(src: &Source) -> Tokens {
         _ => println!("Bad character {ch:?}"),
     }
     }
-    /*
-    let t = Token { toktype: PLUS, lexeme: String::from("+"), line:1 };
-    println!("tok = {t:?}");
 
     // Need to know how to make a tokens list
-    let mut toks: Tokens = Vec::new();
-    toks.push(Token { toktype: PLUS, lexeme: String::from("+"), line:1 });
-    toks.push(Token { toktype: MINUS, lexeme: String::from("-"), line:1 });
+    // let mut toks: Tokens = Vec::new();
+    // toks.push(Token { toktype: PLUS, lexeme: String::from("+"), line:1 });
+    // toks.push(Token { toktype: MINUS, lexeme: String::from("-"), line:1 });
 
-    */
     println!("tokens={tokens:?}");
     tokens
 }
 
-/*
-pub fn tokenize_symbol(text: ...) -> Token {
-    // +, *, -, (, ), {, }...
-    ...
-    // How do I match?
-    // How do I report error?
-    // How do I write a unit test?
-	..
+#[test]
+fn test_smoke() {
+    // A basic test just to make sure tests are running
+    let t = Token::new(PLUS, "+", 1);
+    assert_eq!(t.toktype, PLUS);
+    assert_eq!(t.lexeme, "+");
+    assert_eq!(t.line, 1);
+    assert_eq!(t, Token::new(PLUS, "+", 1));
 }
-*/
