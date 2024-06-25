@@ -8,7 +8,6 @@ pub mod parse;
 // Type definitions here?
 pub type Filename = String;       // () = "Unit" (kind of like "None" in Python)
 pub type Source = String;
-pub type Tokens = ();
 pub type AST = ();
 
 // Commentary:  I'm pretty sure I don't want to write my entire project
@@ -32,8 +31,8 @@ pub enum TokenType {
     
     // literals
     IDENTIFIER,
-    STRING(String),
-    NUMBER(f64),
+    STRING,
+    NUMBER,
 
     // Keywords
     AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
@@ -53,5 +52,11 @@ pub struct Token {
     line : i32,
 }
 
+impl Token {
+    pub fn new(toktype : TokenType, lexeme : &str, line : i32) -> Token {
+    Token { toktype, lexeme : String::from(lexeme), line }
+    }
+}
 
+pub type Tokens = Vec<Token>;
 
