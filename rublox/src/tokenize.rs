@@ -6,12 +6,64 @@ use crate::{Source, Tokens, Token};
 use crate::TokenType::*;
 
 struct Scanner {
-    source : String,
-    tokens : Tokens
+    source : String,       // Input text
+    index : usize,         // Current scan position
 }
 
 impl Scanner {
+    fn new(source : String) -> Scanner {
+    Scanner { source, index: 0 }
+    }
+    fn peek(&mut self, n : usize) -> &str {
+    if self.index + n >= self.source.len() {
+        ""
+    } else {
+        &self.source[self.index..self.index+n]
+    }
+    }
+}
 
+#[test]
+fn test_scanner() {
+    let mut scan = Scanner::new(String::from("hello world"));
+    assert_eq!(scan.peek(1), "h");
+    assert_eq!(scan.peek(2), "he");
+}
+
+// Wishful thinking....
+pub fn match_one_character_symbol(scanner : &mut Scanner) -> Option<Token> {
+    // "peek" returns a substring of a given length at current position (wishing)
+    match scanner.peek(1) {
+    "+" => Some(Token::new(PLUS, "+", 0)),
+    "-" => Some(Token::new(MINUS, "-", 0)),
+    "<" => Some(Token::new(LT, "<", 0)),
+    _ => None
+    }
+}
+
+#[test]
+fn test_match_one_character_symbol() {
+    let mut scanner = Scanner::new(String::from("+*"));
+    let t = match_one_character_symbol(&mut scanner);
+    assert_eq!(t, Some(Token::new(PLUS, "+", 0)));
+
+    let mut scanner = Scanner::new(String::from("a"));
+    let t = match_one_character_symbol(&mut scanner);
+    assert_eq!(t, None);
+}
+
+pub fn match_two_character_symbol(scanner : &mut Scanner) -> Option<Token> {
+    match scanner.peek(2) {
+    "<=" => Some(Token::new(LE, "<=", 0)),
+    _ => None
+    }
+}
+
+#[test]
+fn test_match_two_character_symbol() {
+    let mut scanner = Scanner::new(String::from("<= "));
+    let t = match_two_character_symbol(&mut scanner);
+    assert_eq!(t, Some(Token::new(LE, "<=", 0)));
 }
 
 pub fn tokenize(src: &Source) -> Tokens {
@@ -115,6 +167,12 @@ pub fn tokenize(src: &Source) -> Tokens {
 
     println!("tokens={tokens:?}");
     tokens
+}
+
+fn tokenize_number() {
+}
+
+fn tokenize_identifier() {
 }
 
 #[test]
