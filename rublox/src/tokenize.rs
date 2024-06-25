@@ -14,7 +14,6 @@ impl Scanner {
 
 }
 
-
 pub fn tokenize(src: &Source) -> Tokens {
     println!("Tokenizing Lox");
 
@@ -26,57 +25,93 @@ pub fn tokenize(src: &Source) -> Tokens {
     while let Some(ch) = chars.next() {
     println!("ch={ch:?}");
     match ch {
-        '+' => tokens.push(Token { toktype: PLUS, lexeme: String::from("+"), line: line }),
-        '-' => tokens.push(Token { toktype: MINUS, lexeme: String::from("-"), line: line }),
-        '*' => tokens.push(Token { toktype: STAR, lexeme: String::from("*"), line: line }),
-        '/' => tokens.push(Token { toktype: SLASH, lexeme: String::from("/"), line: line }),
-        '(' => tokens.push(Token { toktype: LPAREN, lexeme: String::from("("), line: line }),
-        ')' => tokens.push(Token { toktype: RPAREN, lexeme: String::from(")"), line: line }),
-        '{' => tokens.push(Token { toktype: LBRACE, lexeme: String::from("{"), line: line }),
-        '}' => tokens.push(Token { toktype: RBRACE, lexeme: String::from("}"), line: line }),
-        ';' => tokens.push(Token { toktype: SEMICOLON, lexeme: String::from(";"), line: line }),
-        ',' => tokens.push(Token { toktype: COMMA, lexeme: String::from(","), line: line }),
-        '.' => tokens.push(Token { toktype: DOT, lexeme: String::from("."), line: line }),
+        ' ' | '\t' | '\r' => (),     // Whitespace ignored
+        '\n' => { line += 1; },      // Newline ignored (but line number bumped up)
+        '+' => tokens.push(Token::new(PLUS, "+", line)),
+        '-' => tokens.push(Token::new(MINUS, "-", line)),
+        '*' => tokens.push(Token::new(STAR, "*", line)),
+        '(' => tokens.push(Token::new(LPAREN, "(", line)),
+        ')' => tokens.push(Token::new(RPAREN, ")", line)),
+        '{' => tokens.push(Token::new(LBRACE, "{", line)),
+        '}' => tokens.push(Token::new(RBRACE, "}", line)),
+        ';' => tokens.push(Token::new(SEMICOLON, ";", line)),
+        ',' => tokens.push(Token::new(COMMA, ",", line)),
+        '.' => tokens.push(Token::new(DOT, ".", line)),
         '=' => {
         if let Some('=') = chars.peek() {
             chars.next();
-            tokens.push(Token { toktype: EQ, lexeme: String::from("=="), line: line })
+            tokens.push(Token::new(EQ, "==", line))
         } else {
-            tokens.push(Token { toktype: ASSIGN, lexeme: String::from("="), line:line })
+            tokens.push(Token::new(ASSIGN, "=", line))
         }
         },
         '>' => {
         if let Some('=') = chars.peek() {
             chars.next();
-            tokens.push(Token { toktype: GE, lexeme: String::from(">="), line: line })
+            tokens.push(Token::new(GE, ">=", line))
         } else {
-            tokens.push(Token { toktype: GT, lexeme: String::from(">"), line:line })
+            tokens.push(Token::new(GT, ">", line))
         }
         },
         '<' => {
         if let Some('=') = chars.peek() {
             chars.next();
-            tokens.push(Token { toktype: LE, lexeme: String::from("<="), line: line })
+            tokens.push(Token::new(LE, "<=", line))
         } else {
-            tokens.push(Token { toktype: LT, lexeme: String::from("<"), line:line })
+            tokens.push(Token::new(LT, "<", line))
         }
         },
         '!' => {
         if let Some('=') = chars.peek() {
             chars.next();
-            tokens.push(Token { toktype: NE, lexeme: String::from("!="), line: line })
+            tokens.push(Token::new(NE, "!=", line))
         } else {
-            tokens.push(Token { toktype: BANG, lexeme: String::from("!"), line:line })
+            tokens.push(Token::new(BANG, "!", line))
         }
         },
+
+        // TODO : Must modify to / recognized comments (//)
+        '/' => {
+        if let Some('/') = chars.peek() {
+            chars.next();
+            while let Some(nextch) = chars.next() {
+            if nextch == '\n' {
+                line += 1;
+                break
+            }
+            }
+        } else {
+            tokens.push(Token::new(SLASH, "/", line))
+        }
+        }
+
+        // TODO: Numeric Literals
+        // TODO: Strings
+        // TODO: Identifiers and reserved words
+        'a'..='z' | 'A'..='Z' | '_' => {
+        let mut lexeme = String::new();
+        lexeme.push(ch);
+        while let Some(nextch) = chars.peek() {
+            match *nextch {
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '_' => {
+                lexeme.push(*nextch);
+                chars.next();
+            },
+            _ => {
+                break;
+            }
+            }
+        }
+        tokens.push(Token::new(IDENTIFIER, &lexeme, line));
+        }
         _ => println!("Bad character {ch:?}"),
     }
     }
     /*
-    // Make sure I can create a token and actually see it in debugging!
     let t = Token { toktype: PLUS, lexeme: String::from("+"), line:1 };
     println!("tok = {t:?}");
 
+    // Need to know how to make a tokens list
     let mut toks: Tokens = Vec::new();
     toks.push(Token { toktype: PLUS, lexeme: String::from("+"), line:1 });
     toks.push(Token { toktype: MINUS, lexeme: String::from("-"), line:1 });
