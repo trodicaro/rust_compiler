@@ -2,6 +2,8 @@
 //
 // Tokenize Lox
 
+use std::str::Chars;
+
 use crate::{Source, Tokens, Token};
 use crate::TokenType::*;
 
@@ -14,12 +16,15 @@ impl Scanner {
     fn new(source : String) -> Scanner {
     Scanner { source, index: 0 }
     }
-    fn peek(&mut self, n : usize) -> &str {
+    fn peek(&self, n : usize) -> &str {
     if self.index + n >= self.source.len() {
         ""
     } else {
         &self.source[self.index..self.index+n]
     }
+    }
+    fn remaining(&self) -> Chars {
+    self.source[self.index..].chars()
     }
 
     // Return the next token on the input.
@@ -31,8 +36,10 @@ impl Scanner {
         None
     }
     }
-
-    fn match_any(&mut self) -> Option<Token> {
+    fn match_any(&self) -> Option<Token> {
+    if let Some(tok) = self.match_identifier() {
+        return Some(tok);
+    }
     if let Some(tok) = self.match_two_character_symbol() {
         return Some(tok);
     }
@@ -41,23 +48,76 @@ impl Scanner {
     }
     return None
     }
-
     // Match any single character symbol like "+", ".", etc.
-    fn match_one_character_symbol(&mut self) -> Option<Token> {
+    fn match_one_character_symbol(&self) -> Option<Token> {
     match self.peek(1) {
         "+" => Some(Token::new(PLUS, "+", 0)),
         "-" => Some(Token::new(MINUS, "-", 0)),
+        "*" => Some(Token::new(STAR, "*", 0)),
+        "(" => Some(Token::new(LPAREN, "(", 0)),
+        ")" => Some(Token::new(RPAREN, ")", 0)),
+        "{" => Some(Token::new(LBRACE, "{", 0)),
+        "}" => Some(Token::new(RBRACE, "}", 0)),
+        ";" => Some(Token::new(SEMICOLON, ";", 0)),
+        "," => Some(Token::new(COMMA, ",", 0)),
+        "." => Some(Token::new(DOT, ".", 0)),
+        "=" => Some(Token::new(ASSIGN, "=", 0)),
+        ">" => Some(Token::new(GT, ">", 0)),
         "<" => Some(Token::new(LT, "<", 0)),
+        "!" => Some(Token::new(BANG, "!", 0)),
+        "/" => Some(Token::new(SLASH, "/", 0)),
         _ => None
     }
     }
     // Match any two-character symbol like "<=", "==", "!=", etc.
-    fn match_two_character_symbol(&mut self) -> Option<Token> {
+    fn match_two_character_symbol(&self) -> Option<Token> {
     match self.peek(2) {
         "<=" => Some(Token::new(LE, "<=", 0)),
+        ">=" => Some(Token::new(GE, ">=", 0)),
+        "!=" => Some(Token::new(NE, "!=", 0)),
+        "==" => Some(Token::new(EQ, "==", 0)),
         _ => None
     }
     }
+    fn match_identifier(&self) -> Option<Token> {
+    let mut chars = self.remaining();
+    if let Some(ch) = chars.next() {
+        if ch.is_alphabetic() || ch == '_' {
+        // Iterate over remaining characters looking for valid identifier characters
+        let mut lexeme = String::new();
+        lexeme.push(ch);
+        for ch in chars {
+            if ch.is_alphanumeric() || ch == '_' {
+            lexeme.push(ch);
+            } else {
+            break;
+            }
+        }
+        Some(Token::new(IDENTIFIER, &lexeme, 0))
+        } else {
+        None
+        }
+    } else {
+        None
+    }
+    }
+
+    fn match_number(&self) -> Option<Token> {
+    todo!();
+    }
+    fn match_comment(&self) -> Option<Token> {
+    todo!();
+    }
+    fn match_whitespace(&self) -> Option<Token> {
+    todo!();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // tests here
 }
 
 #[test]
@@ -69,29 +129,31 @@ fn test_scanner() {
 
 #[test]
 fn test_match_one_character_symbol() {
-    let mut scanner = Scanner::new(String::from("+*"));
+    let scanner = Scanner::new(String::from("+*"));
     let t = scanner.match_one_character_symbol();
     assert_eq!(t, Some(Token::new(PLUS, "+", 0)));
 
-    let mut scanner = Scanner::new(String::from("a"));
+    let scanner = Scanner::new(String::from("a"));
     let t = scanner.match_one_character_symbol();
     assert_eq!(t, None);
 }
 
 #[test]
 fn test_match_two_character_symbol() {
-    let mut scanner = Scanner::new(String::from("<= "));
+    let scanner = Scanner::new(String::from("<= "));
     let t = scanner.match_two_character_symbol();
     assert_eq!(t, Some(Token::new(LE, "<=", 0)));
 }
 
 #[test]
 fn test_next_token() {
-    let mut scanner = Scanner::new(String::from("<<= "));
+    let mut scanner = Scanner::new(String::from("<<=abc "));
     let t = scanner.next_token();
     assert_eq!(t, Some(Token::new(LT, "<", 0)));
     let t = scanner.next_token();
     assert_eq!(t, Some(Token::new(LE, "<=", 0)));
+    let t = scanner.next_token();
+    assert_eq!(t, Some(Token::new(IDENTIFIER, "abc", 0)));
 }
 
 pub fn tokenize(src: &Source) -> Tokens {
@@ -184,6 +246,7 @@ pub fn tokenize(src: &Source) -> Tokens {
         }
         tokens.push(Token::new(IDENTIFIER, &lexeme, line));
         }
+
         _ => println!("Bad character {ch:?}"),
     }
     }
