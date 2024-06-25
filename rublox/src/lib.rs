@@ -20,7 +20,10 @@ pub type AST = ();
 // like to figure out some basic source structure now before I get too
 // far deep into actual implementation.
 
-#[derive(Debug)]
+// Note: PartialEq is so that token types can be compared with ==
+//       Debug is so that token types can be printed.
+
+#[derive(PartialEq, Debug)]
 pub enum TokenType {
     // Symbols
     LPAREN, RPAREN, LBRACE, RBRACE,   // ( ) { }
@@ -40,7 +43,7 @@ pub enum TokenType {
     EOF
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct Token {
     toktype : TokenType,
     lexeme  : String,
