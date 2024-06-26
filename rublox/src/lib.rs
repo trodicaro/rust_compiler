@@ -4,6 +4,7 @@ pub mod reader;
 pub mod tokenize;
 pub mod interp;
 pub mod parse;
+pub mod ast;
 
 // Type definitions here?
 pub type Filename = String;       // () = "Unit" (kind of like "None" in Python)
