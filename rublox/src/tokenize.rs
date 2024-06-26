@@ -24,6 +24,13 @@ impl Scanner {
     fn new(source : String) -> Scanner {
     Scanner { source, index: 0 }
     }
+    fn peekch(&self) -> char {
+    if self.index >= self.source.len() {
+        '\x00'
+    } else {
+        self.source.chars().nth(self.index).expect("")
+    }
+    }
     fn peek(&self, n : usize) -> &str {
     if self.index + n >= self.source.len() {
         ""
@@ -56,7 +63,7 @@ impl Scanner {
     let mut line = 1;
     for tok in rawtokens.into_iter() {
         match tok {
-        Token { toktype: WHITESPACE, lexeme: lexeme, line:_ } => {
+        Token { toktype: WHITESPACE, lexeme, line:_ } => {
             line += lexeme.matches('\n').count();
         },
         Token { toktype: COMMENT, lexeme: _, line: _ } => {
@@ -96,22 +103,22 @@ impl Scanner {
     }
     // Match any single character symbol like "+", ".", etc.
     fn match_one_character_symbol(&self) -> Option<Token> {
-    match self.peek(1) {
-        "+" => Some(Token::new(PLUS, "+", 0)),
-        "-" => Some(Token::new(MINUS, "-", 0)),
-        "*" => Some(Token::new(STAR, "*", 0)),
-        "(" => Some(Token::new(LPAREN, "(", 0)),
-        ")" => Some(Token::new(RPAREN, ")", 0)),
-        "{" => Some(Token::new(LBRACE, "{", 0)),
-        "}" => Some(Token::new(RBRACE, "}", 0)),
-        ";" => Some(Token::new(SEMICOLON, ";", 0)),
-        "," => Some(Token::new(COMMA, ",", 0)),
-        "." => Some(Token::new(DOT, ".", 0)),
-        "=" => Some(Token::new(ASSIGN, "=", 0)),
-        ">" => Some(Token::new(GT, ">", 0)),
-        "<" => Some(Token::new(LT, "<", 0)),
-        "!" => Some(Token::new(BANG, "!", 0)),
-        "/" => Some(Token::new(SLASH, "/", 0)),
+    match self.peekch() {
+        '+' => Some(Token::new(PLUS, "+", 0)),
+        '-' => Some(Token::new(MINUS, "-", 0)),
+        '*' => Some(Token::new(STAR, "*", 0)),
+        '(' => Some(Token::new(LPAREN, "(", 0)),
+        ')' => Some(Token::new(RPAREN, ")", 0)),
+        '{' => Some(Token::new(LBRACE, "{", 0)),
+        '}' => Some(Token::new(RBRACE, "}", 0)),
+        ';' => Some(Token::new(SEMICOLON, ";", 0)),
+        ',' => Some(Token::new(COMMA, ",", 0)),
+        '.' => Some(Token::new(DOT, ".", 0)),
+        '=' => Some(Token::new(ASSIGN, "=", 0)),
+        '>' => Some(Token::new(GT, ">", 0)),
+        '<' => Some(Token::new(LT, "<", 0)),
+        '!' => Some(Token::new(BANG, "!", 0)),
+        '/' => Some(Token::new(SLASH, "/", 0)),
         _ => None
     }
     }
@@ -126,76 +133,58 @@ impl Scanner {
     }
     }
     fn match_identifier(&self) -> Option<Token> {
-    let mut chars = self.remaining();
-    if let Some(ch) = chars.next() {
-        if ch.is_alphabetic() || ch == '_' {
-        // Iterate over remaining characters looking for valid identifier characters
-        let mut lexeme = String::new();
-        lexeme.push(ch);
-        for ch in chars {
-            if ch.is_alphanumeric() || ch == '_' {
-            lexeme.push(ch);
-            } else {
-            break;
-            }
-        }
-        let toktype = match lexeme.as_str() {
-            "and" => AND,
-            "class" => CLASS,
-            "else" => ELSE,
-            "false" => FALSE,
-            "for" => FOR,
-            "fun" => FUN,
-            "if" => IF,
-            "nil" => NIL,
-            "or" => OR,
-            "print" => PRINT,
-            "return" => RETURN,
-            "super" => SUPER,
-            "this" => THIS,
-            "true" => TRUE,
-            "var" => VAR,
-            "while" => WHILE,
-            _ => IDENTIFIER
-        };
-        Some(Token::new(toktype, &lexeme, 0))
-        } else {
-        None
-        }
-    } else {
-        None
+    let ch = self.peekch();
+    if !(ch.is_alphabetic() || ch == '_') {
+        return None
     }
+    let mut lexeme = String::new();
+    for ch in self.remaining() {
+        if ch.is_alphanumeric() || ch == '_' {
+        lexeme.push(ch);
+        } else {
+        break;
+        }
+    }
+    let toktype = match lexeme.as_str() {
+        "and" => AND,
+        "class" => CLASS,
+        "else" => ELSE,
+        "false" => FALSE,
+        "for" => FOR,
+        "fun" => FUN,
+        "if" => IF,
+        "nil" => NIL,
+        "or" => OR,
+        "print" => PRINT,
+        "return" => RETURN,
+        "super" => SUPER,
+        "this" => THIS,
+        "true" => TRUE,
+        "var" => VAR,
+        "while" => WHILE,
+        _ => IDENTIFIER
+    };
+    Some(Token::new(toktype, &lexeme, 0))
     }
 
     // not super happy with this, may revisit later
     fn match_number(&self) -> Option<Token> {
-    let mut chars = self.remaining();
-    if let Some(ch) = chars.next() {
-        if ch.is_numeric() {
-        let mut have_decimal_point = false;
-        let mut lexeme = String::new();
-        lexeme.push(ch);
-        while let Some(ch) = chars.next() {
-            if ch == '.' {
-            if have_decimal_point {
-                break;
-            } else {
-                have_decimal_point = true;
-                lexeme.push('.');
-            }
-            } else if ch.is_numeric() {
-            lexeme.push(ch);
-            } else {
-            break;
-            }
-        }
-        Some(Token::new(NUMBER, &lexeme, 0))
-        } else {
-        None
-        }
-    } else {
-        None
+    if !(self.peekch().is_numeric()) {
+        return None;
     }
+    let mut have_decimal_point = false;
+    let mut lexeme = String::new();
+    for ch in self.remaining() {
+        if ch == '.' && have_decimal_point {
+        break;
+        } else if ch == '.' {
+        have_decimal_point = true;
+        } else if !(ch.is_numeric()) {
+        break;
+        }
+        lexeme.push(ch);
+    }
+    Some(Token::new(NUMBER, &lexeme, 0))
     }
 
     fn match_comment(&self) -> Option<Token> {
@@ -213,41 +202,32 @@ impl Scanner {
     }
     }
     fn match_whitespace(&self) -> Option<Token> {
-    let mut chars = self.remaining();
-    if let Some(ch) = chars.next() {
-        if ch.is_whitespace()  {
-        // Iterate over remaining characters looking for valid identifier characters
-        let mut lexeme = String::new();
+    if !(self.peekch().is_whitespace()) {
+        return None;
+    }
+    let mut lexeme = String::new();
+    for ch in self.remaining() {
+        if ch.is_whitespace() {
         lexeme.push(ch);
-        for ch in chars {
-            if ch.is_whitespace() {
-            lexeme.push(ch);
-            } else {
-            break;
-            }
-        }
-        Some(Token::new(WHITESPACE, &lexeme, 0))
         } else {
-        None
+        break;
         }
-    } else {
-        None
     }
+    Some(Token::new(WHITESPACE, &lexeme, 0))
     }
+
     fn match_string(&self) -> Option<Token> {
-    if self.peek(1) == "\"" {
-        let mut lexeme = String::new();
-        for ch in self.remaining() {
-        if ch == '"' && lexeme.len() > 0 {
-            lexeme.push('"');
-            break;
-        }
-        lexeme.push(ch);
-        }
-        Some(Token::new(STRING, &lexeme, 0))
-    } else {
-        None
+    if self.peekch() != '\"' {
+        return None;
     }
+    let mut lexeme = String::new();
+    for ch in self.remaining() {
+        lexeme.push('"');
+        if ch == '"' && lexeme.len() > 0 {
+        break;
+        }
+    }
+    Some(Token::new(STRING, &lexeme, 0))
     }
 }
 
