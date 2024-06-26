@@ -2,6 +2,8 @@
 //
 // Abstract Syntax Tree (AST) for Lox.
 
+use std::fmt;
+
 // All of the valid operators
 #[derive(PartialEq, Debug)]
 pub enum Op {
@@ -17,11 +19,30 @@ pub enum Op {
     OpNe,         // != 
 }
 
+// This allows the Op enum to be converted into a nice string for printing, formatting, etc.
+impl fmt::Display for Op {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+	match self {
+	    OpPlus => write!(f, "+"),
+	    OpMinus => write!(f, "-"),
+	    OpMult => write!(f, "*"),
+	    OpDiv => write!(f, "/"),
+	    OpLt => write!(f, "<"),
+	    OpLe => write!(f, "<="),
+	    OpGt => write!(f, ">"),
+	    OpGe => write!(f, ">="),
+	    OpEq => write!(f, "=="),
+	    OpNe => write!(f, "!="),
+	}
+    }
+}
+
 #[derive(PartialEq, Debug)]
 pub enum Expression {
     ENumber(f64),       // A number like 123 or 123.45
     EString(String),    // A string like "hello"
     EBoolean(bool),     // A boolean like true or false
+    ENil,               // nil
     EBinary(Op, Box<Expression>, Box<Expression>),   // expr + expr
     EUnary(Op, Box<Expression>),                     // -expr
     EGroup(Box<Expression>),                         // ( expr )
@@ -30,49 +51,43 @@ pub enum Expression {
 use crate::ast::Expression::*;
 use crate::ast::Op::*;
 
-pub fn format_op(op : &Op) -> String {
-    match op {
-	OpPlus => String::from("+"),
-	OpMinus => String::from("-"),
-	OpMult => String::from("*"),
-	OpDiv => String::from("/"),
-	OpLt => String::from("<"),
-	OpLe => String::from("<="),
-	OpGt => String::from(">"),
-	OpGe => String::from(">="),
-	OpEq => String::from("=="),
-	OpNe => String::from("!="),
-    }
-}
-	
+// Turn an expression into nicely formatted Lox code
 pub fn format_expression(expr : &Expression) -> String {
     match expr {
-	ENumber(value) => { value.to_string() },
-	EString(value) => { String::from(value) },
-	EBoolean(value) => { if *value { String::from("true") } else
-			     { String::from("false") } },
+	ENumber(value) => {
+	    value.to_string()
+	},
+	EString(value) => {
+	    String::from(value)
+	},
+	EBoolean(value) => {
+	    if *value { String::from("true") } else { String::from("false") }
+	},
+	ENil => {
+	    String::from("nil")
+	},
 	EBinary(op, left, right) => {
-	    format_expression(left) + &format_op(op) + &format_expression(right)
+	    format!("{} {} {}", format_expression(left), op, format_expression(right))
 	},
 	EGroup(value) => {
 	    format!("({})", format_expression(value))
 	},
 	EUnary(op, value) => {
-	    format_op(op) + &format_expression(value)
+	    format!("{}{}", op, format_expression(value))
 	}
     }
 }
 
-
-pub fn example() {
+#[test]
+pub fn test_formatting() {
     // Example encoding of expressions
 
     // 2 + 3
     let expr1 = EBinary(OpPlus,
 			Box::new(ENumber(2.0)),
 			Box::new(ENumber(3.0)));
-    println!("{expr1:?}");
-    println!("{}", format_expression(&expr1));
+    let fmt1 = format_expression(&expr1);
+    assert_eq!(fmt1, "2 + 3");
     
     // 2 + (3 * 4)
     let expr2 = EBinary(OpPlus,
@@ -80,6 +95,6 @@ pub fn example() {
 		       Box::new(EGroup(Box::new(EBinary(OpMult,
 							Box::new(ENumber(3.0)),
 							Box::new(ENumber(4.0)))))));
-    println!("{expr2:?}");
-    println!("{}", format_expression(&expr2));    
+    let fmt2 = format_expression(&expr2);
+    assert_eq!(fmt2, "2 + (3 * 4)");
 }
