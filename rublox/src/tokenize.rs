@@ -7,6 +7,14 @@ use std::str::Chars;
 use crate::{Source, Tokens, Token};
 use crate::TokenType::*;
 
+pub fn tokenize(src: &Source) -> Tokens {
+    println!("Tokenizing Lox");
+    let mut scanner = Scanner::new(String::from(src));
+    let toks = scanner.tokenize();
+    println!("{toks:?}");
+    toks
+}
+
 struct Scanner {
     source : String,       // Input text
     index : usize,         // Current scan position
@@ -73,6 +81,9 @@ impl Scanner {
         return Some(tok);
     }
     if let Some(tok) = self.match_number() {
+        return Some(tok);
+    }
+    if let Some(tok) = self.match_string() {
         return Some(tok);
     }
     if let Some(tok) = self.match_two_character_symbol() {
@@ -223,14 +234,26 @@ impl Scanner {
         None
     }
     }
+    fn match_string(&self) -> Option<Token> {
+    if self.peek(1) == "\"" {
+        let mut lexeme = String::new();
+        for ch in self.remaining() {
+        if ch == '"' && lexeme.len() > 0 {
+            lexeme.push('"');
+            break;
+        }
+        lexeme.push(ch);
+        }
+        Some(Token::new(STRING, &lexeme, 0))
+    } else {
+        None
+    }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // tests here
-}
 
 #[test]
 fn test_scanner() {
@@ -278,12 +301,6 @@ fn test_next_token() {
     assert_eq!(t, Some(Token::new(COMMENT, "//comment", 0)));
 }
 
-pub fn tokenize(src: &Source) -> Tokens {
-    println!("Tokenizing Lox");
-    let mut scanner = Scanner::new(String::from(src));
-    let toks = scanner.tokenize();
-    println!("{toks:?}");
-    toks
 }
 
 #[test]
