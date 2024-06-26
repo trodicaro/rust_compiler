@@ -1,2 +1,10 @@
-+-*/;
++-*/;=
+== < <= >= ( ) ; . , // A comment
+! !=
+abc def456 _abc_234
+123
+123.45
+
+// Keywords
+and class else false for fun if nil or print return super this true var while
 
