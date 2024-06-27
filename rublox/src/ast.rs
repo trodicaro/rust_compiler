@@ -16,7 +16,8 @@ pub enum Op {
     OpGt,         // >
     OpGe,         // >=
     OpEq,         // ==
-    OpNe,         // != 
+    OpNe,         // !=
+    OpNot,        // !
 }
 
 // This allows the Op enum to be converted into a nice string for printing, formatting, etc.
@@ -33,6 +34,7 @@ impl fmt::Display for Op {
 	    OpGe => write!(f, ">="),
 	    OpEq => write!(f, "=="),
 	    OpNe => write!(f, "!="),
+	    OpNot => write!(f, "!"),
 	}
     }
 }

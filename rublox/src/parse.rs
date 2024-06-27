@@ -2,11 +2,22 @@
 //
 // Parse Lox code
 
-use crate::{Tokens, AST};
+use crate::{Tokens, TokenType, Token, AST};
 use crate::ast::Expression;
+use crate::ast::Expression::*;
+use crate::ast::Op::*;
+use crate::TokenType::*;
+use crate::tokenize::tokenize;
 
 pub fn parse(_tokens : &Tokens) -> AST {
     println!("Parsing Lox");
+}
+
+pub fn parse_expression_string(src : &str) -> Expression {
+    let s = String::from(src);
+    let tokens = tokenize(&s);
+    let mut parser = Parser::new(tokens);
+    parser.parse_expression().expect("failed")
 }
 
 // Discussion:  The Lox grammar for expressions is as follows. Tokens are ALLCAPS.
@@ -29,8 +40,6 @@ pub fn parse(_tokens : &Tokens) -> AST {
 // Strategy for parsing:  You try to work left-to-right over input tokens, matching
 // them in order.
 //
-// PROBLEM: This code doesn't work because it trips up in an infinite recursion.
-// Have to fix the grammar and reorganize the code.
 
 struct Parser {
     tokens : Tokens,    // From scanner
@@ -42,59 +51,192 @@ impl Parser {
     Parser { tokens, current: 0 }
     }
 
-    // Require the next token to exactly match an expected type or an error
-    fn expect(&mut self, tty: TokenType) -> Result<Token, String> {
+    fn previous(&self) -> &Token {
+    &self.tokens[self.current-1]
+    }
+
+    // Check next token *without* consuming it
+    fn check(&self, tty: TokenType) -> bool {
+    self.current < self.tokens.len() && self.tokens[self.current].toktype == tty
+    }
+
+    // If next token matches return true and advance.
+    // This is called "match" in Crafting Interpreters
+    fn accept(&mut self, tty: TokenType) -> bool {
+    if self.check(tty) {
+        self.current += 1;
+        true
+    } else {
+        false
+    }
+    }
+
+    // Require the next token to exactly match an expected type or a syntax error
+    fn consume(&mut self, tty: TokenType, message: &str) -> Result<&Token, String> {
     if self.tokens[self.current].toktype == tty {
         self.current += 1;
-        Ok(self.tokens[self.current-1])
+        Ok(&self.tokens[self.current-1])
     } else {
-        Err("Syntax Error")
+        Err(String::from(message))
     }
     }
 
     fn parse_expression(&mut self) -> Result<Expression, String> {
-    todo!();
+    self.parse_equality()
     }
-    fn parse_literal(&mut self) -> Result<Expression, String> {
-    // if match(NUMBER) return ENumber(...)
-    // if match(STRING) return EString(...)
-    // if match(TRUE) return EBoolean(true)
-    // if match(FALSE) return EBoolean(false)
-    // if match(NIL) return ENil
-    todo!();
+    fn parse_equality(&mut self) -> Result<Expression, String> {
+    let mut expr = self.parse_comparison()?;
+    while self.accept(EQ) || self.accept(NE) {
+        let op = match self.previous().toktype {
+        EQ => OpEq,
+        NE => OpNe,
+        _ => panic!("Should not be here")
+        };
+        expr = EBinary(op, Box::new(expr), Box::new(self.parse_comparison()?));
     }
-    fn parse_grouping(&mut self) -> Result<Expression, String> {
-    // "( expression )"
-    // expect(LPAREN)    // Hard requirement
-    // value = parse_expression()
-    // expect(RPAREN)
-    // return EGrouping(value)   // Create AST object
-    todo!();
+    Ok(expr)
+    }
+
+    fn parse_comparison(&mut self) -> Result<Expression, String> {
+    let mut expr = self.parse_term()?;
+    while self.accept(LT) || self.accept(LE) || self.accept(GT) || self.accept(GE) {
+        let op = match self.previous().toktype {
+        LT => OpLt,
+        LE => OpLe,
+        GT => OpGt,
+        GE => OpGe,
+        _ => panic!("Should not be here")
+        };
+        expr = EBinary(op, Box::new(expr), Box::new(self.parse_term()?));
+    }
+    Ok(expr)
+    }
+    fn parse_term(&mut self) -> Result<Expression, String> {
+    let mut expr = self.parse_factor()?;
+    while self.accept(PLUS) || self.accept(MINUS) {
+        let op = match self.previous().toktype {
+        PLUS => OpPlus,
+        MINUS => OpMinus,
+        _ => panic!("Should not be here")
+        };
+        expr = EBinary(op, Box::new(expr), Box::new(self.parse_factor()?));
+    }
+    Ok(expr)
+    }
+    fn parse_factor(&mut self) -> Result<Expression, String> {
+    let mut expr = self.parse_unary()?;
+    while self.accept(SLASH) || self.accept(STAR) {
+        let op = match self.previous().toktype {
+        SLASH => OpDiv,
+        STAR => OpMult,
+        _ => panic!("Should not be here")
+        };
+        expr = EBinary(op, Box::new(expr), Box::new(self.parse_unary()?));
+    }
+    Ok(expr)
     }
     fn parse_unary(&mut self) -> Result<Expression, String> {
-    // op = parse_operator()
-    // value = parse_expression()
-    // return EUnary(op, value)
-    todo!();
+    if self.accept(MINUS) || self.accept(BANG) {
+        let op = match self.previous().toktype {
+        MINUS => OpMinus,
+        BANG => OpNot,
+        _ => panic!("Should not be here")
+        };
+        let right = self.parse_unary()?;
+        Ok(EUnary(op, Box::new(right)))
+    } else {
+        self.parse_primary()
     }
-    fn parse_binary(&mut self) -> Result<Expression, String> {
-    // left = parse_expression()
-    // op = parse_operator()
-    // right = parse_expression()
-    // return EBinary(op, left, right)
-    todo!();
     }
-    fn parse_operator(&mut self) -> Result<Expression, String> {
-    // if match(PLUS) return OpPlus
-    // if match(MINUS) return OpMinus
-    // if match(STAR) return OpMult
-    // if match(SLASH) return OpDiv
-    // if match(LT) return OpLt
-    // if match(LE) return OpLe
-    // if match(GT) return OpGt
-    // if match(GE) return OpGe
-    // if match(EQ) return OpEq
-    // if match(NE) return OpNe
-    todo!();
+    fn parse_primary(&mut self) -> Result<Expression, String> {
+    if self.accept(FALSE) {
+        Ok(EBoolean(false))
+    } else if self.accept(TRUE) {
+        Ok(EBoolean(true))
+    } else if self.accept(NIL) {
+        Ok(ENil)
+    } else if self.accept(NUMBER) {
+        Ok(ENumber(self.previous().lexeme.parse().expect("")))
+    } else if self.accept(STRING) {
+        todo!();
+    } else if self.accept(LPAREN) {
+        let expr = self.parse_expression()?;
+        self.consume(RPAREN, "Expect ')' after expression.")?;
+        Ok(EGroup(Box::new(expr)))
+    } else {
+        Err(String::from("Expected a primary"))
     }
+    }
+}
+
+#[test]
+fn test_primaries() {
+    assert_eq!(parse_expression_string("1"), ENumber(1.0));
+    assert_eq!(parse_expression_string("1.25"), ENumber(1.25));
+    assert_eq!(parse_expression_string("true"), EBoolean(true));
+    assert_eq!(parse_expression_string("false"), EBoolean(false));
+    assert_eq!(parse_expression_string("nil"), ENil);
+    // assert_eq!(parse_expression_string("\"hello\""), EString(String::from("hello")));
+}
+
+#[test]
+fn test_unary() {
+    assert_eq!(parse_expression_string("-1"), EUnary(OpMinus, Box::new(ENumber(1.0))));
+    assert_eq!(parse_expression_string("!true"), EUnary(OpNot, Box::new(EBoolean(true))));
+}
+
+#[test]
+fn test_factor() {
+    assert_eq!(parse_expression_string("3*4"),
+           EBinary(OpMult,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
+    assert_eq!(parse_expression_string("3/4"),
+           EBinary(OpDiv,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
+}
+
+#[test]
+fn test_term() {
+    assert_eq!(parse_expression_string("3+4"),
+           EBinary(OpPlus,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
+    assert_eq!(parse_expression_string("3-4"),
+           EBinary(OpMinus,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
+}
+
+#[test]
+fn test_comparison() {
+    assert_eq!(parse_expression_string("3<4"),
+           EBinary(OpLt,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
+    assert_eq!(parse_expression_string("3<=4"),
+           EBinary(OpLe,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
+    assert_eq!(parse_expression_string("3>4"),
+           EBinary(OpGt,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
+    assert_eq!(parse_expression_string("3>=4"),
+           EBinary(OpGe,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
+}
+
+#[test]
+fn test_equality() {
+    assert_eq!(parse_expression_string("3==4"),
+           EBinary(OpEq,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
+    assert_eq!(parse_expression_string("3!=4"),
+           EBinary(OpNe,
+               Box::new(ENumber(3.0)),
+               Box::new(ENumber(4.0))));
 }
