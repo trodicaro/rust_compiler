@@ -13,7 +13,7 @@ fn main() {
     let filename = get_filename_from_args();
     let src = read_source(&filename);
     let tokens = tokenize(&src);
-    let ast = parse(&tokens);
+    let ast = parse(tokens);
     interpret(&ast);
 }
 

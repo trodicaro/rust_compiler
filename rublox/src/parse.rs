@@ -3,15 +3,17 @@
 // Parse Lox code
 
 use crate::{Tokens, TokenType, Token, AST};
-use crate::ast::{Expression,Statement};
+use crate::ast::{Expression,Statement,Statements};
 use crate::ast::Expression::*;
 use crate::ast::Statement::*;
 use crate::ast::Op::*;
 use crate::TokenType::*;
 use crate::tokenize::tokenize;
 
-pub fn parse(_tokens : &Tokens) -> AST {
+pub fn parse(tokens : Tokens) -> AST {
     println!("Parsing Lox");
+    let mut parser = Parser::new(tokens);
+    parser.parse_statements().expect("syntax error")
 }
 
 pub fn parse_expression_string(src : &str) -> Expression {
@@ -27,6 +29,7 @@ pub fn parse_statement_string(src : &str) -> Statement {
     let mut parser = Parser::new(tokens);
     parser.parse_statement().expect("failed")
 }
+
 
 // Discussion:  The Lox grammar for expressions is as follows. Tokens are ALLCAPS.
 //
@@ -64,7 +67,8 @@ impl Parser {
 
     // Check next token *without* consuming it
     fn check(&self, tty: TokenType) -> bool {
-    self.current < self.tokens.len() && self.tokens[self.current].toktype == tty
+    (self.current < self.tokens.len() && self.tokens[self.current].toktype == tty)
+        || (self.current >= self.tokens.len() && tty == EOF)
     }
 
     // If next token matches return true and advance.
@@ -193,6 +197,15 @@ impl Parser {
     let value = self.parse_expression()?;
     self.consume(SEMICOLON, "Expect ';' after expression.")?;
     Ok(SExpr(value))
+    }
+
+    // Parsing of multiple statements
+    fn parse_statements(&mut self) -> Result<Statements, String> {
+    let mut statements = Statements::new();
+    while !(self.check(EOF)) {
+        statements.push(self.parse_statement()?);
+    }
+    Ok(statements)
     }
 }
 

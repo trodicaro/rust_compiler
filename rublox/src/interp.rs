@@ -5,12 +5,13 @@
 use crate::AST;
 use crate::ast::Expression::*;
 use crate::ast::Statement::*;
-use crate::ast::{Expression, Statement};
+use crate::ast::{Expression, Statement, Statements};
 use crate::ast::Op::*;
 use crate::parse::parse_expression_string;
 
-pub fn interpret(_ast : &AST) {
-    println!("Interpreting Lox");
+pub fn interpret(ast : &AST) {
+    println!("========= Interpreting Lox");
+    interpret_statements(ast);
 }
 
 #[derive(PartialEq, Debug)]
@@ -22,6 +23,12 @@ enum LoxValue {
 }
 
 use LoxValue::*;
+
+pub fn interpret_statements(statements : &Statements) -> () {
+    for stmt in statements.iter() {
+    interpret_statement(stmt);
+    }
+}
 
 pub fn interpret_statement(stmt : &Statement) -> () {
     match stmt {

@@ -9,7 +9,6 @@ pub mod ast;
 // Type definitions here?
 pub type Filename = String;       // () = "Unit" (kind of like "None" in Python)
 pub type Source = String;
-pub type AST = ();
 
 // Commentary:  I'm pretty sure I don't want to write my entire project
 // inside `main.rs` or inside `lib.rs`.   So currently trying to figure
@@ -67,3 +66,4 @@ impl Token {
 }
 
 pub type Tokens = Vec<Token>;
+pub type AST = ast::Statements;
