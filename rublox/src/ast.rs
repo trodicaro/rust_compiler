@@ -50,8 +50,15 @@ pub enum Expression {
     EGroup(Box<Expression>),                         // ( expr )
 }
 
+#[derive(PartialEq, Debug)]
+pub enum Statement {
+    SPrint(Expression),      // print expr ;
+    SExpr(Expression),       // expr ;   (Statement expression)
+}
+
 use crate::ast::Expression::*;
 use crate::ast::Op::*;
+use crate::ast::Statement::*;
 
 // Turn an expression into nicely formatted Lox code
 pub fn format_expression(expr : &Expression) -> String {
@@ -80,6 +87,17 @@ pub fn format_expression(expr : &Expression) -> String {
     }
 }
 
+pub fn format_statement(stmt : &Statement) -> String {
+    match stmt {
+	SPrint(value) => {
+	    format!("print {};\n", format_expression(value))
+	},
+	SExpr(value) => {
+	    format!("{};\n", format_expression(value))
+	},
+    }
+}
+
 #[test]
 pub fn test_formatting() {
     // Example encoding of expressions
@@ -99,4 +117,9 @@ pub fn test_formatting() {
 							Box::new(ENumber(4.0)))))));
     let fmt2 = format_expression(&expr2);
     assert_eq!(fmt2, "2 + (3 * 4)");
+
+    // print 2;
+    let stmt3 = SPrint(ENumber(2.0));
+    let fmt3 = format_statement(&stmt3);
+    assert_eq!(fmt3, "print 2;\n");
 }

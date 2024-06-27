@@ -3,8 +3,9 @@
 // Parse Lox code
 
 use crate::{Tokens, TokenType, Token, AST};
-use crate::ast::Expression;
+use crate::ast::{Expression,Statement};
 use crate::ast::Expression::*;
+use crate::ast::Statement::*;
 use crate::ast::Op::*;
 use crate::TokenType::*;
 use crate::tokenize::tokenize;
@@ -18,6 +19,13 @@ pub fn parse_expression_string(src : &str) -> Expression {
     let tokens = tokenize(&s);
     let mut parser = Parser::new(tokens);
     parser.parse_expression().expect("failed")
+}
+
+pub fn parse_statement_string(src : &str) -> Statement {
+    let s = String::from(src);
+    let tokens = tokenize(&s);
+    let mut parser = Parser::new(tokens);
+    parser.parse_statement().expect("failed")
 }
 
 // Discussion:  The Lox grammar for expressions is as follows. Tokens are ALLCAPS.
@@ -39,7 +47,6 @@ pub fn parse_expression_string(src : &str) -> Expression {
 //
 // Strategy for parsing:  You try to work left-to-right over input tokens, matching
 // them in order.
-//
 
 struct Parser {
     tokens : Tokens,    // From scanner
@@ -81,6 +88,7 @@ impl Parser {
     }
     }
 
+    // Expression Parsing
     fn parse_expression(&mut self) -> Result<Expression, String> {
     self.parse_equality()
     }
@@ -167,6 +175,25 @@ impl Parser {
         Err(String::from("Expected a primary"))
     }
     }
+    // Statement parsing
+    fn parse_statement(&mut self) -> Result<Statement, String> {
+    if self.check(PRINT) {
+        self.parse_print()
+    } else {
+        self.parse_statement_expr()
+    }
+    }
+    fn parse_print(&mut self) -> Result<Statement, String> {
+    self.consume(PRINT, "Expected 'print'")?;
+    let value = self.parse_expression()?;
+    self.consume(SEMICOLON, "Expect ';' after expression.")?;
+    Ok(SPrint(value))
+    }
+    fn parse_statement_expr(&mut self) -> Result<Statement, String> {
+    let value = self.parse_expression()?;
+    self.consume(SEMICOLON, "Expect ';' after expression.")?;
+    Ok(SExpr(value))
+    }
 }
 
 #[test]
@@ -208,7 +235,6 @@ fn test_term() {
                Box::new(ENumber(3.0)),
                Box::new(ENumber(4.0))));
 }
-
 #[test]
 fn test_comparison() {
     assert_eq!(parse_expression_string("3<4"),
@@ -239,4 +265,12 @@ fn test_equality() {
            EBinary(OpNe,
                Box::new(ENumber(3.0)),
                Box::new(ENumber(4.0))));
+}
+
+#[test]
+fn test_statement() {
+    assert_eq!(parse_statement_string("print 3;"),
+           SPrint(ENumber(3.0)));
+    assert_eq!(parse_statement_string("3;"),
+           SExpr(ENumber(3.0)));
 }
