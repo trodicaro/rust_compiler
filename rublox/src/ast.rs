@@ -56,6 +56,8 @@ pub enum Statement {
     SExpr(Expression),       // expr ;   (Statement expression)
 }
 
+pub type Statements = Vec<Statement>;
+
 use crate::ast::Expression::*;
 use crate::ast::Op::*;
 use crate::ast::Statement::*;
