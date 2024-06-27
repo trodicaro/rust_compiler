@@ -41,12 +41,25 @@ pub fn interpret_expression(expr : &Expression) -> LoxValue {
         let leftval = interpret_expression(left);   // Box<Expression>
         let rightval = interpret_expression(right);
         match (leftval, op, rightval) {
+        // Numeric operations
         (LNumber(lv), OpPlus, LNumber(rv)) => { LNumber(lv+rv) },
-        (LString(lv), OpPlus, LString(rv)) => { LString(lv+&rv) },
         (LNumber(lv), OpMinus, LNumber(rv)) => { LNumber(lv-rv) },
         (LNumber(lv), OpMult, LNumber(rv)) => { LNumber(lv*rv) },
         (LNumber(lv), OpDiv, LNumber(rv)) => { LNumber(lv/rv) },
         (LNumber(lv), OpLt, LNumber(rv)) => { LBoolean(lv < rv) },
+        (LNumber(lv), OpLe, LNumber(rv)) => { LBoolean(lv <= rv) },
+        (LNumber(lv), OpGt, LNumber(rv)) => { LBoolean(lv > rv) },
+        (LNumber(lv), OpGe, LNumber(rv)) => { LBoolean(lv >= rv) },
+        (LNumber(lv), OpEq, LNumber(rv)) => { LBoolean(lv == rv) },
+        (LNumber(lv), OpNe, LNumber(rv)) => { LBoolean(lv != rv) },
+        // String operations
+        (LString(lv), OpPlus, LString(rv)) => { LString(lv+&rv) },
+        (LString(lv), OpEq, LString(rv)) => { LBoolean(lv == rv) },
+        (LString(lv), OpNe, LString(rv)) => { LBoolean(lv != rv) },
+        // Boolean operations
+        (LBoolean(lv), OpEq, LBoolean(rv)) => { LBoolean(lv == rv) },
+        (LBoolean(lv), OpNe, LBoolean(rv)) => { LBoolean(lv != rv) },
+
         _ => {
             // 34 + "hello"
             panic!("Unsupported operation")
@@ -60,6 +73,7 @@ pub fn interpret_expression(expr : &Expression) -> LoxValue {
         let lvalue = interpret_expression(value);
         match (op, lvalue) {
         (OpMinus, LNumber(v)) => { LNumber(-v) },
+        (OpNot, LBoolean(v)) => { LBoolean(!v) },
         _ => {
             panic!("Unsupported operation")
         }
