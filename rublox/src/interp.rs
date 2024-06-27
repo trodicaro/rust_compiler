@@ -4,7 +4,8 @@
 
 use crate::AST;
 use crate::ast::Expression::*;
-use crate::ast::Expression;
+use crate::ast::Statement::*;
+use crate::ast::{Expression, Statement};
 use crate::ast::Op::*;
 use crate::parse::parse_expression_string;
 
@@ -22,7 +23,19 @@ enum LoxValue {
 
 use LoxValue::*;
 
-// Tree-walk interpreter (not fastest)
+pub fn interpret_statement(stmt : &Statement) -> () {
+    match stmt {
+    SPrint(value) => {
+        let lvalue = interpret_expression(value);
+        println!("LOX: {lvalue:?}");
+    },
+    SExpr(value) => {
+        interpret_expression(value);
+    },
+    }
+}
+
+// Tree-walk interpreter (simplest thing you can do, but not fastest)
 pub fn interpret_expression(expr : &Expression) -> LoxValue {
     match expr {
     ENumber(value) => {
@@ -73,6 +86,8 @@ pub fn interpret_expression(expr : &Expression) -> LoxValue {
         let lvalue = interpret_expression(value);
         match (op, lvalue) {
         (OpMinus, LNumber(v)) => { LNumber(-v) },
+
+        // What is "truthy"?
         (OpNot, LBoolean(v)) => { LBoolean(!v) },
         _ => {
             panic!("Unsupported operation")
