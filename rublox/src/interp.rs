@@ -8,14 +8,15 @@ use crate::ast::Statement::*;
 use crate::ast::{Expression, Statement, Statements};
 use crate::ast::Op::*;
 use crate::parse::parse_expression_string;
+use crate::environ::Environment;
 
 pub fn interpret(ast : &AST) {
     println!("========= Interpreting Lox");
-    interpret_statements(ast);
+    interpret_statements(ast, &mut Environment::new());
 }
 
-#[derive(PartialEq, Debug)]
-enum LoxValue {
+#[derive(PartialEq, Clone, Debug)]
+pub enum LoxValue {
     LNumber(f64),       // Runtime representation of Lox values.
     LString(String),
     LBoolean(bool),
@@ -24,32 +25,64 @@ enum LoxValue {
 
 use LoxValue::*;
 
-pub fn interpret_statements(statements : &Statements) -> () {
+pub fn interpret_statements(statements : &Statements, environ : &mut Environment) -> () {
     for stmt in statements.iter() {
-    interpret_statement(stmt);
+    interpret_statement(stmt, environ);
     }
 }
 
-pub fn interpret_statement(stmt : &Statement) -> () {
+pub fn interpret_statement(stmt : &Statement, environ : &mut Environment) -> () {
     match stmt {
     SPrint(value) => {
-        let lvalue = interpret_expression(value);
+        let lvalue = interpret_expression(value, environ);
+        // Note: This will need to be refined later for the final language.
+        // I've modified the print so it appears as something very obvious.
         println!("LOX: {lvalue:?}");
     },
     SExpr(value) => {
-        interpret_expression(value);
+        interpret_expression(value, environ);
     },
+    SVar(name, value) => {
+        let lvalue = interpret_expression(value, environ);
+        environ.define(name, &lvalue);
+    },
+    SIf(test, consequence, alternative) => {
+        let tvalue = interpret_expression(test, environ);
+        if is_truthy(&tvalue) {
+        interpret_statements(consequence, environ);
+        } else {
+        interpret_statements(alternative, environ);
+        }
+    },
+    SWhile(test, body) => {
+        while is_truthy(&interpret_expression(test, environ)) {
+        interpret_statements(body, environ);
+        }
+    },
+    SAssignment(location, body) => {
+        match location {
+        EName(name) => environ.set(name, &interpret_expression(body, environ)),
+        _ => panic!("Can't assign to that")
+        }
+    }
     }
 }
 
+fn is_truthy(lvalue : &LoxValue) -> bool {
+    // See section 7.2.4
+    match lvalue {
+    LBoolean(false) | LNil => false,
+    _ => true
+    }
+}
 // Tree-walk interpreter (simplest thing you can do, but not fastest)
-pub fn interpret_expression(expr : &Expression) -> LoxValue {
+pub fn interpret_expression(expr : &Expression, environ : &Environment) -> LoxValue {
     match expr {
     ENumber(value) => {
         LNumber(*value)       // In AST, value was already f64
     },
     EString(value) => {
-        todo!()
+        LString(value.clone())
     },
     EBoolean(value) => {
         LBoolean(*value)
@@ -57,9 +90,16 @@ pub fn interpret_expression(expr : &Expression) -> LoxValue {
     ENil => {
         LNil
     },
+    EName(name) => {
+        if let Some(lvalue) = environ.lookup(name) {
+        lvalue
+        } else {
+        panic!("Undefined variable name")
+        }
+    }
     EBinary(op, left, right) => {
-        let leftval = interpret_expression(left);   // Box<Expression>
-        let rightval = interpret_expression(right);
+        let leftval = interpret_expression(left, environ);
+        let rightval = interpret_expression(right, environ);
         match (leftval, op, rightval) {
         // Numeric operations
         (LNumber(lv), OpPlus, LNumber(rv)) => { LNumber(lv+rv) },
@@ -87,10 +127,10 @@ pub fn interpret_expression(expr : &Expression) -> LoxValue {
         }
     },
     EGroup(value) => {
-        interpret_expression(value)
+        interpret_expression(value, environ)
     },
     EUnary(op, value) => {
-        let lvalue = interpret_expression(value);
+        let lvalue = interpret_expression(value, environ);
         match (op, lvalue) {
         (OpMinus, LNumber(v)) => { LNumber(-v) },
 
@@ -107,10 +147,9 @@ pub fn interpret_expression(expr : &Expression) -> LoxValue {
 #[test]
 fn test_interpret() {
     let expr = parse_expression_string("2 + 3 * 4");
-    assert_eq!(interpret_expression(&expr), LNumber(14.0));
+    assert_eq!(interpret_expression(&expr, &Environment::new()), LNumber(14.0));
     let expr = parse_expression_string("(2 + 3) * (4 + 5)");
-    assert_eq!(interpret_expression(&expr), LNumber(45.0));
+    assert_eq!(interpret_expression(&expr, &Environment::new()), LNumber(45.0));
     let expr = parse_expression_string("(2 + 3) < (4 + 5)");
-    assert_eq!(interpret_expression(&expr), LBoolean(true));
-
+    assert_eq!(interpret_expression(&expr, &Environment::new()), LBoolean(true));
 }

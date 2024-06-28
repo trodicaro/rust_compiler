@@ -1,0 +1,29 @@
+// Lox with variables
+
+var x = 3.14;
+print 2*x;
+
+if x > 3 {
+    print "yes";
+} else {
+    print "no";
+}
+
+if x > 6 {
+   print "yes";
+} else {
+    print "no";
+}
+
+while x > 0 {
+   print x;
+   x = x - 1;
+}
+
+var total = 0;
+var n = 0;
+while n < 100000 {
+      total = total + n;
+      n = n + 1;
+}
+print total;

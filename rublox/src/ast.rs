@@ -48,12 +48,17 @@ pub enum Expression {
     EBinary(Op, Box<Expression>, Box<Expression>),   // expr + expr
     EUnary(Op, Box<Expression>),                     // -expr
     EGroup(Box<Expression>),                         // ( expr )
+    EName(String),      // A variable name
 }
 
 #[derive(PartialEq, Debug)]
 pub enum Statement {
-    SPrint(Expression),      // print expr ;
-    SExpr(Expression),       // expr ;   (Statement expression)
+    SPrint(Expression),        // print expr ;
+    SVar(String, Expression),  // var name = value;
+    SExpr(Expression),         // expr ;   (Statement expression)
+    SIf(Expression, Vec<Statement>, Vec<Statement>),
+    SWhile(Expression, Vec<Statement>),
+    SAssignment(Expression, Expression),   // location = value ;
 }
 
 pub type Statements = Vec<Statement>;
@@ -77,6 +82,9 @@ pub fn format_expression(expr : &Expression) -> String {
 	ENil => {
 	    String::from("nil")
 	},
+	EName(name) => {
+	    String::from(name)
+	}
 	EBinary(op, left, right) => {
 	    format!("{} {} {}", format_expression(left), op, format_expression(right))
 	},
@@ -97,6 +105,18 @@ pub fn format_statement(stmt : &Statement) -> String {
 	SExpr(value) => {
 	    format!("{};\n", format_expression(value))
 	},
+	SVar(name, value) => {
+	    format!("var {} = {};\n", name, format_expression(value))
+	},
+	SIf(test, consequence, alternative) => {
+	    todo!();
+	},
+	SWhile(test, body) => {
+	    todo!();
+	},
+	SAssignment(location, value) => {
+	    todo!();
+	}
     }
 }
 
