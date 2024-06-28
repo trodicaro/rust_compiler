@@ -170,11 +170,15 @@ impl Parser {
     } else if self.accept(NUMBER) {
         Ok(ENumber(self.previous().lexeme.parse().expect("")))
     } else if self.accept(STRING) {
-        todo!();
+        let lexeme = &self.previous().lexeme;
+        // println!("{lexeme:?}");
+        Ok(EString(lexeme[1..lexeme.len()-1].to_string()))
     } else if self.accept(LPAREN) {
         let expr = self.parse_expression()?;
         self.consume(RPAREN, "Expect ')' after expression.")?;
         Ok(EGroup(Box::new(expr)))
+    } else if self.accept(IDENTIFIER) {
+        Ok(EName(self.previous().lexeme.clone()))
     } else {
         Err(String::from("Expected a primary"))
     }
@@ -183,6 +187,12 @@ impl Parser {
     fn parse_statement(&mut self) -> Result<Statement, String> {
     if self.check(PRINT) {
         self.parse_print()
+    } else if self.check(IF) {
+        self.parse_if()
+    } else if self.check(WHILE) {
+        self.parse_while()
+    } else if self.check(VAR) {
+        self.parse_var()
     } else {
         self.parse_statement_expr()
     }
@@ -193,16 +203,60 @@ impl Parser {
     self.consume(SEMICOLON, "Expect ';' after expression.")?;
     Ok(SPrint(value))
     }
+    fn parse_var(&mut self) -> Result<Statement, String> {
+    // var name [ = value ];
+    self.consume(VAR, "Expected 'var'")?;
+    self.consume(IDENTIFIER, "Expected identifier")?;
+    let name = self.previous().lexeme.clone();
+    let value = if self.accept(ASSIGN) {
+        self.parse_expression()?
+    } else {
+        ENil
+    };
+    self.consume(SEMICOLON, "Expected ';'")?;
+    Ok(SVar(name, value))
+    }
+    fn parse_if(&mut self) -> Result<Statement, String> {
+    // if test { consequence } else { alternative }
+    self.consume(IF, "Expected 'if'")?;
+    let test = self.parse_expression()?;
+    self.consume(LBRACE, "Expected '{'")?;
+    let consequence = self.parse_statements()?;
+    self.consume(RBRACE, "Expected '}'")?;
+    self.consume(ELSE, "Expected 'else'")?;
+    self.consume(LBRACE, "Expected '{'")?;
+    let alternative = self.parse_statements()?;
+    self.consume(RBRACE, "Expected '}'")?;
+    Ok(SIf(test, consequence, alternative))
+    }
+
+    fn parse_while(&mut self) -> Result<Statement, String> {
+    // while test { body }
+    self.consume(WHILE, "Expected 'while'")?;
+    let test = self.parse_expression()?;
+    self.consume(LBRACE, "Expected '{'")?;
+    let body = self.parse_statements()?;
+    self.consume(RBRACE, "Expected '}'")?;
+    Ok(SWhile(test, body))
+    }
+
     fn parse_statement_expr(&mut self) -> Result<Statement, String> {
-    let value = self.parse_expression()?;
-    self.consume(SEMICOLON, "Expect ';' after expression.")?;
-    Ok(SExpr(value))
+    // A bare expression like 'expr ;' or an assignment like 'lvalue = rvalue;'
+    let lvalue = self.parse_expression()?;
+    if self.accept(ASSIGN) {
+        let rvalue = self.parse_expression()?;
+        self.consume(SEMICOLON, "Expect ';' after assignment.")?;
+        Ok(SAssignment(lvalue, rvalue))
+    } else {
+        self.consume(SEMICOLON, "Expect ';' after expression.")?;
+        Ok(SExpr(lvalue))
+    }
     }
 
     // Parsing of multiple statements
     fn parse_statements(&mut self) -> Result<Statements, String> {
     let mut statements = Statements::new();
-    while !(self.check(EOF)) {
+    while !(self.check(EOF) || self.check(RBRACE)) {
         statements.push(self.parse_statement()?);
     }
     Ok(statements)
@@ -216,6 +270,7 @@ fn test_primaries() {
     assert_eq!(parse_expression_string("true"), EBoolean(true));
     assert_eq!(parse_expression_string("false"), EBoolean(false));
     assert_eq!(parse_expression_string("nil"), ENil);
+    assert_eq!(parse_expression_string("xyz"), EName(String::from("xyz")));
     // assert_eq!(parse_expression_string("\"hello\""), EString(String::from("hello")));
 }
 
@@ -286,4 +341,8 @@ fn test_statement() {
            SPrint(ENumber(3.0)));
     assert_eq!(parse_statement_string("3;"),
            SExpr(ENumber(3.0)));
+    assert_eq!(parse_statement_string("var x = 3;"),
+           SVar(String::from("x"), ENumber(3.0)));
+    assert_eq!(parse_statement_string("if true { } else { }"),
+           SIf(EBoolean(true), Statements::new(), Statements::new()));
 }
