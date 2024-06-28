@@ -193,6 +193,8 @@ impl Parser {
         self.parse_while()
     } else if self.check(VAR) {
         self.parse_var()
+    } else if self.check(LBRACE) {
+        self.parse_block()
     } else {
         self.parse_statement_expr()
     }
@@ -220,26 +222,26 @@ impl Parser {
     // if test { consequence } else { alternative }
     self.consume(IF, "Expected 'if'")?;
     let test = self.parse_expression()?;
-    self.consume(LBRACE, "Expected '{'")?;
-    let consequence = self.parse_statements()?;
-    self.consume(RBRACE, "Expected '}'")?;
+    let consequence = self.parse_statement()?;
     self.consume(ELSE, "Expected 'else'")?;
-    self.consume(LBRACE, "Expected '{'")?;
-    let alternative = self.parse_statements()?;
-    self.consume(RBRACE, "Expected '}'")?;
-    Ok(SIf(test, consequence, alternative))
+    let alternative = self.parse_statement()?;
+    Ok(SIf(test, Box::new(consequence), Box::new(alternative)))
     }
 
     fn parse_while(&mut self) -> Result<Statement, String> {
     // while test { body }
     self.consume(WHILE, "Expected 'while'")?;
     let test = self.parse_expression()?;
+    let body = self.parse_statement()?;
+    Ok(SWhile(test, Box::new(body)))
+    }
+
+    fn parse_block(&mut self) -> Result<Statement, String> {
     self.consume(LBRACE, "Expected '{'")?;
     let body = self.parse_statements()?;
     self.consume(RBRACE, "Expected '}'")?;
-    Ok(SWhile(test, body))
+    Ok(SBlock(body))
     }
-
     fn parse_statement_expr(&mut self) -> Result<Statement, String> {
     // A bare expression like 'expr ;' or an assignment like 'lvalue = rvalue;'
     let lvalue = self.parse_expression()?;
@@ -344,5 +346,7 @@ fn test_statement() {
     assert_eq!(parse_statement_string("var x = 3;"),
            SVar(String::from("x"), ENumber(3.0)));
     assert_eq!(parse_statement_string("if true { } else { }"),
-           SIf(EBoolean(true), Statements::new(), Statements::new()));
+           SIf(EBoolean(true),
+           Box::new(SBlock(Statements::new())),
+           Box::new(SBlock(Statements::new()))));
 }
