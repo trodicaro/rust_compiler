@@ -56,9 +56,10 @@ pub enum Statement {
     SPrint(Expression),        // print expr ;
     SVar(String, Expression),  // var name = value;
     SExpr(Expression),         // expr ;   (Statement expression)
-    SIf(Expression, Vec<Statement>, Vec<Statement>),
-    SWhile(Expression, Vec<Statement>),
+    SIf(Expression, Box<Statement>, Box<Statement>),
+    SWhile(Expression, Box<Statement>),
     SAssignment(Expression, Expression),   // location = value ;
+    SBlock(Vec<Statement>),
 }
 
 pub type Statements = Vec<Statement>;
@@ -108,15 +109,18 @@ pub fn format_statement(stmt : &Statement) -> String {
 	SVar(name, value) => {
 	    format!("var {} = {};\n", name, format_expression(value))
 	},
-	SIf(test, consequence, alternative) => {
+	SIf(_test, _consequence, _alternative) => {
 	    todo!();
 	},
-	SWhile(test, body) => {
+	SWhile(_test, _body) => {
 	    todo!();
 	},
-	SAssignment(location, value) => {
+	SAssignment(_location, _value) => {
 	    todo!();
-	}
+	},
+	SBlock(_statements) => {
+	    todo!();
+	},
     }
 }
 

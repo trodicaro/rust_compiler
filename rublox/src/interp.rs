@@ -2,6 +2,8 @@
 //
 // Interpret Lox code
 
+use std::rc::Rc;
+
 use crate::AST;
 use crate::ast::Expression::*;
 use crate::ast::Statement::*;
@@ -12,7 +14,7 @@ use crate::environ::Environment;
 
 pub fn interpret(ast : &AST) {
     println!("========= Interpreting Lox");
-    interpret_statements(ast, &mut Environment::new());
+    interpret_statements(ast, &Environment::new());
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -25,13 +27,13 @@ pub enum LoxValue {
 
 use LoxValue::*;
 
-pub fn interpret_statements(statements : &Statements, environ : &mut Environment) -> () {
+pub fn interpret_statements(statements : &Statements, environ : &Rc<Environment>) -> () {
     for stmt in statements.iter() {
     interpret_statement(stmt, environ);
     }
 }
 
-pub fn interpret_statement(stmt : &Statement, environ : &mut Environment) -> () {
+pub fn interpret_statement(stmt : &Statement, environ : &Rc<Environment>) -> () {
     match stmt {
     SPrint(value) => {
         let lvalue = interpret_expression(value, environ);
@@ -44,26 +46,29 @@ pub fn interpret_statement(stmt : &Statement, environ : &mut Environment) -> () 
     },
     SVar(name, value) => {
         let lvalue = interpret_expression(value, environ);
-        environ.define(name, &lvalue);
+        environ.define(name, lvalue);
     },
     SIf(test, consequence, alternative) => {
         let tvalue = interpret_expression(test, environ);
         if is_truthy(&tvalue) {
-        interpret_statements(consequence, environ);
+        interpret_statement(consequence, environ);
         } else {
-        interpret_statements(alternative, environ);
+        interpret_statement(alternative, environ);
         }
     },
     SWhile(test, body) => {
         while is_truthy(&interpret_expression(test, environ)) {
-        interpret_statements(body, environ);
+        interpret_statement(body, environ);
         }
     },
     SAssignment(location, body) => {
         match location {
-        EName(name) => environ.set(name, &interpret_expression(body, environ)),
+        EName(name) => environ.set(name, interpret_expression(body, environ)),
         _ => panic!("Can't assign to that")
         }
+    },
+    SBlock(statements) => {
+        interpret_statements(statements, &Environment::new_scope(environ))
     }
     }
 }
@@ -76,7 +81,7 @@ fn is_truthy(lvalue : &LoxValue) -> bool {
     }
 }
 // Tree-walk interpreter (simplest thing you can do, but not fastest)
-pub fn interpret_expression(expr : &Expression, environ : &Environment) -> LoxValue {
+pub fn interpret_expression(expr : &Expression, environ : &Rc<Environment>) -> LoxValue {
     match expr {
     ENumber(value) => {
         LNumber(*value)       // In AST, value was already f64

@@ -1,0 +1,11 @@
+// scopes.lox
+//
+// Testing of variable scope
+
+var x = 123;
+{
+    var y = x + 10;
+    print y;
+}
+print x;
+print y;   // This should fail (y out of scope)
